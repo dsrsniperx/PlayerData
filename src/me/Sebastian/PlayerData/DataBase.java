@@ -13,12 +13,7 @@ public class DataBase {
 		main = instance;
 	}
 	
-	boolean loginError = false;
-	
 	public void checkConnection(){
-		if(loginError){
-			return;
-		}
 		if(main.connection == null){
 			establishMySQLConnection();
 			return;
@@ -30,7 +25,6 @@ public class DataBase {
 			}
 		}catch(Exception e){
 			e.printStackTrace();
-			establishMySQLConnection();
 		}
 		
 	}
@@ -47,7 +41,7 @@ public class DataBase {
 			System.out.println("[Player_Data]"
 					+ "Checking if table exists, if not creating one.");
 			if (!hasCorrectTable()) {
-				//createTable();
+				createTable();
 				System.out.println("[Player_Data]"
 								+ "Table missing!?! Creating one for you with correct variables. ;)");
 			}
@@ -55,7 +49,6 @@ public class DataBase {
 			
 			e.printStackTrace();
 			System.out.println("Could not connect to MYSQL Database!!!");
-			loginError = true;
 			//main.getServer().shutdown();
 		}
 	}

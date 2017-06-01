@@ -26,7 +26,7 @@ public class PlayerDataAPI extends DataManager{
 	
 	public static PlayerDataAPI pDataAPI;
 	
-	public final int maxPartyMembers = 25;
+	public final int maxPartyMembers = 4;
 	
 	public static PlayerDataAPI getAPI(){
 		if(pDataAPI == null){
@@ -48,149 +48,11 @@ public class PlayerDataAPI extends DataManager{
 	public void save(){
 		main.saveConfig();
 	}
-
-	public void setOfficialName(UUID uuid, String name){
-		checkConnection();
-		
-		try{
-			PreparedStatement statement = main.connection.prepareStatement("UPDATE `"+main.mainTable+"` SET name=? WHERE uuid=?;");
-			statement.setString(1, name);
-			statement.setString(2, uuid.toString());
-			statement.executeUpdate();
-			
-			statement.close();
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-	}
-	public void updateOfficialName(String oldName, String newName){
-		checkConnection();
-		
-		try{
-			if(this.containsTable("party")){
-				if(this.isPartyLeader(oldName)){
-					PreparedStatement statement = main.connection.prepareStatement("UPDATE `party` SET name=? WHERE name=?;");
-					statement.setString(1, newName);
-					statement.setString(2, oldName);
-					statement.executeUpdate();
-					
-					statement.close();
-				}
-			}
-			if(this.containsTable("player_data")){
-				PreparedStatement statement = main.connection.prepareStatement("UPDATE `player_data` SET name=? WHERE name=?;");
-				statement.setString(1, newName);
-				statement.setString(2, oldName);
-				
-				statement.executeUpdate();
-				statement.close();
-			}
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-	}
-	public void resetPlayer(String playerName){
-		checkConnection();
-		try{
-			PreparedStatement statement = main.connection.prepareStatement("DELETE FROM `player_data` WHERE name=?;");
-			statement.setString(1, playerName);
-			statement.executeUpdate();
-			
-			statement.close();
-			
-			statement = main.connection.prepareStatement("DELETE FROM `permissions` WHERE name=?;");			
-			statement.setString(1, playerName);
-			statement.executeUpdate();
-			
-			statement.close();
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		getConfig().set(playerName, null);
-		save();
-	}
-	public void set(String path, Object value){
-		
-		if(value == null){
-			removeColumn(main.mainTable, path);
-			return;
-		}
-		String components[] = path.replaceFirst("[.]", "/").split("[/]");
-		
-		path = components[1].replace('.', '_');
-		
-		setValue(components[0], path, value.toString());
-	}
-	public boolean isSet(String path){
-		return (getString(path) != null);
-	}
-	public String getString(String path){
-		String value = null;
-		String components[] = path.replaceFirst("[.]", "/").split("[/]");
-		
-		path = components[1].replace('.', '_');
-		value = getValue(components[0], path);
-		
-		return value;
-	}
-	public int getInt(String path){
-		try{
-			return Integer.parseInt(getString(path));
-		}catch(Exception e){
-			return 0;
-		}
-	}
-	public double getDouble(String path){
-		try{
-			return Double.parseDouble(getString(path));
-		}catch(Exception e){
-			return 0;
-		}
-	}
-	public boolean getBoolean(String path){
-		try{
-			return Boolean.parseBoolean(getString(path));
-		}catch(Exception e){
-			return false;
-		}
-	}
-	public boolean containsPlayer(UUID playerUUID){
-		checkConnection();
-		try{
-			PreparedStatement statement = main.connection.prepareStatement("SELECT * FROM `"+main.mainTable+"` WHERE uuid=?;");
-			statement.setString(1, playerUUID.toString());
-			ResultSet result = statement.executeQuery();
-			
-			boolean value = result.next();
-			result.close();
-			statement.close();
-			
-			return value;
-			
-		}catch(Exception e){
-			e.printStackTrace();
-			return false;
-		}
 	
-	}
-	public boolean containsPlayer(String playerName){
-		checkConnection();
-		try{
-			PreparedStatement statement = main.connection.prepareStatement("SELECT * FROM `"+main.mainTable+"` WHERE name=?;");
-			statement.setString(1, playerName);
-			ResultSet result = statement.executeQuery();
-			
-			boolean value = result.next();
-			result.close();
-			statement.close();
-			
-			return value;
-			
-		}catch(Exception e){
-			e.printStackTrace();
-			return false;
-		}
-	}
+	///////////////////////////////////////////////////////////////////
+	// General SQL Utils TODO
+	///////////////////////////////////////////////////////////////////
+	
 	public void createTable(final String table, final String initialKey) throws SQLException{
 		checkConnection();
 		if(!containsTable(table)){
@@ -299,6 +161,51 @@ public class PlayerDataAPI extends DataManager{
 //		}
 //		return columns;
 //	}
+	
+	/////////////////////////////////////////////////////////////////////////
+	// Player Data MYSQL TODO
+	////////////////////////////////////////////////////////////////////////
+	
+	public void resetPlayer(String playerName){
+		checkConnection();
+		try{
+			PreparedStatement statement = main.connection.prepareStatement("DELETE FROM `player_data` WHERE name=?;");
+			statement.setString(1, playerName);
+			statement.executeUpdate();
+			
+			statement.close();
+			
+			statement = main.connection.prepareStatement("DELETE FROM `permissions` WHERE name=?;");			
+			statement.setString(1, playerName);
+			statement.executeUpdate();
+			
+			statement.close();
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		getConfig().set(playerName, null);
+		save();
+	}
+	public boolean containsPlayer(UUID playerUUID){
+		checkConnection();
+		try{
+			PreparedStatement statement = main.connection.prepareStatement("SELECT * FROM `"+main.mainTable+"` WHERE uuid=?;");
+			statement.setString(1, playerUUID.toString());
+			ResultSet result = statement.executeQuery();
+			
+			boolean value = result.next();
+			result.close();
+			statement.close();
+			
+			return value;
+			
+		}catch(Exception e){
+			e.printStackTrace();
+			return false;
+		}
+	
+	}
+	
 	public void addPlayer(final UUID playerUUID){
 		checkConnection();
 		
@@ -311,7 +218,6 @@ public class PlayerDataAPI extends DataManager{
 			ResultSet rs = columns.executeQuery();
 			ResultSetMetaData rsmd = rs.getMetaData();
 			int columnCount = rsmd.getColumnCount();
-			
 			
 			String values = "?, ";
 			if(columnCount <= 1){
@@ -338,49 +244,30 @@ public class PlayerDataAPI extends DataManager{
 			e.printStackTrace();
 		}
 	}
-	public List<String> getPlayers(){
-		checkConnection();
-		List<String> players = new ArrayList<>();
-		
-		try{
-			PreparedStatement statement = main.connection.prepareStatement("SELECT name from `player_data`;");
-			ResultSet result = statement.executeQuery();
-			
-			while(result.next()){
-				String name = result.getString("name");
-				
-				if(name != null){
-					players.add(name);
+	public void setValue(final UUID uuid, final String key, final Object value){
+		new BukkitRunnable(){
+			public void run(){
+				try{
+					checkConnection();
+					
+					if(!containsColumn(main.mainTable, key)){
+						createColumn("player_data", key);
+					}
+					PreparedStatement statement = main.connection.prepareStatement("UPDATE `"+main.mainTable+"` SET "+key+"=? WHERE uuid=?;");
+					statement.setString(1, value.toString());
+					statement.setString(2, uuid.toString());
+					statement.executeUpdate();
+					
+					statement.close();
+					
+				}catch(Exception e){
+					e.printStackTrace();
 				}
 			}
-			result.close();
-			statement.close();
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		
-		return players;
+			
+		}.runTaskAsynchronously(main);
 	}
-	public void setValue(final String name, final String key, final String value){
-		
-		try{
-			checkConnection();
-			
-			if(!containsColumn(main.mainTable, key)){
-				createColumn("player_data", key);
-			}
-			PreparedStatement statement = main.connection.prepareStatement("UPDATE `"+main.mainTable+"` SET "+key+"=? WHERE name=?;");
-			statement.setString(1, value);
-			statement.setString(2, name);
-			statement.executeUpdate();
-			
-			statement.close();
-			
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-	}
-	public String getValue(String name, String key){
+	public String getString(final UUID uuid, String key){
 		checkConnection();
 		String value = null;
 		
@@ -390,8 +277,8 @@ public class PlayerDataAPI extends DataManager{
 		
 		try{
 			if(containsColumn(main.mainTable, key)){
-				PreparedStatement statement = main.connection.prepareStatement("SELECT "+key+" FROM `"+main.mainTable+"` WHERE name=?;");
-				statement.setString(1, name);
+				PreparedStatement statement = main.connection.prepareStatement("SELECT "+key+" FROM `"+main.mainTable+"` WHERE uuid=?;");
+				statement.setString(1, uuid.toString());
 				ResultSet result = statement.executeQuery();
 				
 				if(result.next()){
@@ -406,6 +293,28 @@ public class PlayerDataAPI extends DataManager{
 		
 		return value;
 	}
+	public int getInt(UUID uuid, String key){
+		try{
+			int value = Integer.parseInt(getString(uuid, key));
+			return value;
+		}catch(Exception e){
+			
+		}
+		return 0;
+	}
+	public boolean getBoolean(UUID uuid, String key){
+		try{
+			boolean value = Boolean.parseBoolean(getString(uuid, key));
+			return value;
+		}catch(Exception e){
+			
+		}
+		return false;
+	}
+	
+	//////////////////////////////////////////////////////////////////////////////////////////
+	// Party MYSQL TODO
+	/////////////////////////////////////////////////////////////////////////////////////////
 	
 	public void addPartyLeader(final String leaderName){
 		checkConnection();

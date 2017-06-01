@@ -27,11 +27,12 @@ public class Main extends JavaPlugin{
 	PlayerDataAPI api = new PlayerDataAPI(this);
 
 	Connection connection = null;
-	public static String PREFIX = "Player_Data - ";
-	public String host = "104.196.60.123";
-	public String port = "3306";  public String database = "HG-HungerGames";
-	public String username = "MineVerge";
-	public String password = "cYVbN-d?FmXX8J%X";
+	public static String PREFIX = "PlayerData - ";
+	public String host = "23.251.159.208";
+	public String port = "3306";
+	public String database = "zombies";
+	public String username = "zombies";
+	public String password = ";PTx\"tP53jz]";
 	public String mainTable = "player_data";
 	  
 	public List<String> mainTableValues = Arrays.asList("uuid", "name");
@@ -41,8 +42,10 @@ public class Main extends JavaPlugin{
 		main = this;
 		
 	    dManager.createFolder();
-	    //dataBase.establishMySQLConnection();
-	    //this.createPartyTable();
+	    dataBase.establishMySQLConnection();
+	    this.createPartyTable();
+	    
+	    this.getServer().getPluginManager().registerEvents(new ConnectionHandler(this), this);
 	    //this.createTipListTable();
 	    //TODO
 	    
